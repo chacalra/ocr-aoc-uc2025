@@ -2,7 +2,7 @@
 
 ## Segmentation
 
-(describe each segmentation step and detail the inputs and outputs between each step, as a spec and applied using the driving example)
+(describe each segmentation step and detail the inputs and outputs between each step (the red numbers in the OCR diagram, but same for segmentation where arrows lead from one step to the next), as a spec and applied using the driving example)
 
 ## OCR
 
