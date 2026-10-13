@@ -1,7 +1,5 @@
-import sys
 import os
 import cv2
-import easyocr
 import pytesseract
 from PIL import Image
 import numpy as np
@@ -161,12 +159,6 @@ def ocr_with_tesseract(image_array):
     return pytesseract.image_to_string(pil_img)
 
 
-def ocr_with_easyocr(path):
-    reader = easyocr.Reader(['en'], gpu=False)
-    result = reader.readtext(path, detail=0)
-    return "\n".join(result)
-
-
 def calculate_accuracy(predicted_text, ground_truth_text):
     seq = difflib.SequenceMatcher(None, predicted_text, ground_truth_text)
     return seq.ratio() * 100
@@ -323,7 +315,7 @@ if __name__ == "__main__":
     ], help="Modo OCR a utilizar")
     parser.add_argument(
         "--data-dir",
-        default="/Users/chacalra/Universidaa/9no/SE2/Code/Imagenes",
+        default="./Imagenes",
         help="Directorio con imágenes y sus .txt de ground truth"
     )
     args = parser.parse_args()
