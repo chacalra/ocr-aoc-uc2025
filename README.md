@@ -1,109 +1,133 @@
-# OCR Pipeline: PaddleOCR / Tesseract + Post-Processing + Metrics
+# OCR Evaluation Pipeline
 
-This script (`OCR.py`) performs Optical Character Recognition (OCR) using **PaddleOCR** or **Tesseract**, including image preprocessing, spell correction, line ordering, bounding box visualization, and accuracy evaluation against ground-truth files.
+A reproducible Python pipeline for comparing **PaddleOCR** and **Tesseract** on image text recognition tasks with ground-truth evaluation.
 
-## 📦 Requirements
+The project was developed as academic work in computer vision and OCR. It focuses on three practical questions: how preprocessing affects recognition quality, how bounding-box extraction changes the output, and how simple post-processing influences accuracy.
 
-Install all required dependencies using the `requirements.txt` file:
+## What it does
+
+- Runs OCR with **PaddleOCR (PP-OCRv4)** or **Tesseract**.
+- Applies OpenCV preprocessing for the Tesseract path.
+- Extracts word-level or character-level bounding boxes.
+- Reconstructs reading order from detected boxes.
+- Applies lightweight spell correction.
+- Compares predictions against paired ground-truth text.
+- Includes benchmarking scripts and committed benchmark results.
+
+## Pipeline
+
+```text
+Input image
+    │
+    ├── PaddleOCR ───────────────┐
+    │                            │
+    └── OpenCV preprocessing     │
+             │                   │
+             └── Tesseract ──────┤
+                                  ↓
+                         reading-order recovery
+                                  ↓
+                           post-processing
+                                  ↓
+                      ground-truth comparison
+                                  ↓
+                    accuracy + optional boxes
+```
+
+## Quick start
+
+Python 3.10+ is recommended. Tesseract must also be installed on the system for the Tesseract modes.
 
 ```bash
+git clone https://github.com/chacalra/ocr-aoc-uc2025.git
+cd ocr-aoc-uc2025
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+The default dataset directory is `./Imagenes`. Each image should have a matching `.txt` file containing the expected text:
 
-## 📂 Expected Data Directory Structure
-
-Your data folder (default: `./Imagenes`) should contain `.png`, `.jpg`, or `.jpeg` images **along with** `.txt` files with the same name (without extension) that represent the expected text (*ground truth*).  
-Example:
-
-```
-/Imagenes
-├── example1.png
-├── example1.txt
-├── image2.jpg
-├── image2.txt
+```text
+Imagenes/
+├── sample.png
+├── sample.txt
+├── sample2.jpg
+└── sample2.txt
 ```
 
-## 🚀 Usage
+## Usage
 
 ```bash
-python OCR.py [paddle|tesseract] [--data-dir PATH] [--show-boxes]
+python OCR.py MODE [--data-dir PATH]
 ```
 
-### Parameters
+Available modes:
 
-- `paddle` | `tesseract`: Select the OCR engine to use.
-- `--data-dir`: Path to the folder containing images and ground-truth text files (default: `./Imagenes`).
-- `--show-boxes`: Display detected text boxes for 3.5 seconds per image.
+| Mode | Engine | Boxes |
+| --- | --- | --- |
+| `paddle` | PaddleOCR | No |
+| `paddle_boxes` | PaddleOCR | Word |
+| `tesseract` | Tesseract | No |
+| `tesseract_boxes` | Tesseract | Word |
+| `tesseract_chars` | Tesseract | Character |
 
-### Examples
-
-Run OCR using PaddleOCR:
+Examples:
 
 ```bash
-python OCR.py paddle --data-dir ./Imagenes --show-boxes
+python OCR.py paddle
+python OCR.py paddle_boxes --data-dir ./Imagenes
+python OCR.py tesseract --data-dir ./Imagenes
+python OCR.py tesseract_chars --data-dir ./Imagenes
 ```
 
-Run OCR using Tesseract:
+## Tesseract preprocessing
 
-```bash
-python OCR.py tesseract
+The Tesseract path uses an image-processing pipeline built with OpenCV:
+
+1. Bicubic upscaling.
+2. Grayscale conversion.
+3. CLAHE local contrast enhancement.
+4. Bilateral filtering.
+5. Otsu thresholding.
+6. Morphological closing.
+
+The repository also contains an experimental image-specific branch of preprocessing used during evaluation. It is intentionally kept because this project documents an academic exploration rather than presenting the heuristic as a production-general solution.
+
+## Evaluation
+
+Predicted text is compared with the paired ground truth. The current script reports similarity as a percentage using Python's `difflib.SequenceMatcher`.
+
+The committed benchmark results are available at:
+
+- [benchmarks/benchmark_results.csv](benchmarks/benchmark_results.csv)
+- [Benchmark documentation](benchmarks/README_BENCHMARKS.md)
+
+For example, the committed results include a sample where PaddleOCR reaches **100%** similarity and Tesseract reaches **98.90%** in raw-text mode. These figures belong to the included evaluation set; they should not be interpreted as general OCR accuracy claims.
+
+## Repository structure
+
+```text
+OCR.py                         Main OCR and evaluation script
+Imagenes/                      Evaluation images + ground truth
+benchmarks/                    Benchmark scripts and results
+Resultados/                    Generated/experimental outputs
+detect_east3.py                EAST text-detection experiment
+requirements.txt               Python dependencies
 ```
 
-## ⚙️ Features
+## Scope and limitations
 
-### 🔍 Preprocessing
-- Image upscaling.
-- Grayscale conversion.
-- CLAHE (adaptive histogram equalization).
-- Bilateral filtering and sharpening.
-- Binary thresholding + morphological closing.
+- This is an evaluation/research repository, not a production OCR service.
+- The similarity metric is useful for comparative experiments but is not a substitute for CER/WER in a rigorous OCR benchmark.
+- The Tesseract preprocessing contains a heuristic tuned for one evaluation image.
+- GUI box visualization requires a desktop OpenCV environment.
+- OCR quality depends strongly on layout, resolution, typography, and image quality.
 
-### 🧠 OCR Engines
-- **PaddleOCR**: Uses `PaddleOCR(use_angle_cls=True, lang='en', ocr_version='PP-OCRv4')`.
-- **Tesseract**: Applied over the preprocessed image, detects words and characters.
+## Tech stack
 
-### 🪄 Post-processing
-- Word ordering based on vertical clustering.
-- English spell-check correction (`pyspellchecker`).
-- Converts final output to uppercase clean text.
+Python · OpenCV · PaddleOCR · Tesseract · NumPy · Pillow · pyspellchecker
 
-### 📐 Visualization
-- Draws word and/or character bounding boxes on images.
+## License
 
-### 🎯 Metrics
-- Accuracy is computed using `difflib.SequenceMatcher` between final output and ground-truth text.
-
-## 📊 Output
-
-- For each image:
-  - Final corrected text.
-  - Word and/or character boxes (if `--show-boxes` is used).
-  - Individual accuracy.
-- At the end, displays the **average global accuracy** across all images.
-
----
-
-## 📝 Example Output
-
-```
-📂  Mode [PADDLE] in «./Imagenes»
-
-🖼️  example1.png
-📄  Final text:
-THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
-
-🎯  Accuracy: 95.83%
-------------------------------------------------------------
-
-✅  Average accuracy: 93.12%
-```
-
----
-
-## 🤝 Author
-
-This code was developed as part of an OCR evaluation pipeline.  
-For educational and academic use. You can adapt or extend it with other engines, layout analysis, or performance evaluations.
-
----
+MIT
