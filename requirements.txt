@@ -21,8 +21,6 @@ lxml==5.4.0
 networkx==3.4.2
 numpy==2.2.5
 opencv-contrib-python==4.11.0.86
-opencv-python==4.11.0.86
-opencv-python-headless==4.11.0.86
 opt-einsum==3.3.0
 packaging==25.0
 paddleocr==2.10.0
